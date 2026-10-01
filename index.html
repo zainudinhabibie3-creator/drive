@@ -1,1182 +1,991 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="dark h-full">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Unified Multi-Drive Cloud Storage System</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Vue 3 CDN -->
-  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-  <!-- FontAwesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Google Fonts: Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-    }
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: rgba(15, 23, 42, 0.6);
-    }
-    ::-webkit-scrollbar-thumb {
-      background: rgba(51, 65, 85, 0.8);
-      border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(71, 85, 105, 1);
-    }
-    .glass-panel {
-      background: rgba(30, 41, 59, 0.7);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-    }
-    .glass-card {
-      background: rgba(15, 23, 42, 0.5);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DriveFusion - Unified Multi-Drive Cloud Storage & Windows Explorer</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Tailwind Custom Configuration -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkbg: '#0f1117',
+                        cardbg: '#1a1d29',
+                        hoverbg: '#252a3b',
+                        neoncyan: '#00f2fe',
+                        neonpurple: '#9d4edd',
+                        accentblue: '#3b82f6'
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0f1117;
+            color: #f3f4f6;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f1117;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2b3042;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3b82f6;
+        }
+        .glass-panel {
+            background: rgba(26, 29, 41, 0.75);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-panel-hover:hover {
+            border-color: rgba(0, 242, 254, 0.3);
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.1);
+        }
+        .context-menu {
+            display: none;
+            position: absolute;
+            z-index: 1000;
+        }
+        [v-cloak] { display: none; }
+    </style>
 </head>
-<body class="bg-slate-950 text-slate-100 antialiased min-h-screen selection:bg-indigo-500 selection:text-white">
+<body class="h-full flex flex-col overflow-hidden text-sm select-none">
 
-  <div id="app" class="flex flex-col min-h-screen" v-cloak>
-    
-    <!-- TOP NAVIGATION BAR -->
-    <header class="glass-panel sticky top-0 z-30 px-4 py-3 flex items-center justify-between border-b border-slate-800">
-      <div class="flex items-center space-x-3">
-        <div class="bg-gradient-to-tr from-indigo-600 to-cyan-500 p-2.5 rounded-xl shadow-lg shadow-indigo-500/20 text-white flex items-center justify-center">
-          <i class="fa-solid fa-cloud-bolt text-xl"></i>
+    <!-- TOP NAVBAR / HEADER -->
+    <header class="h-16 border-b border-gray-800 bg-gray-900/60 backdrop-blur px-4 lg:px-6 flex items-center justify-between z-30 flex-shrink-0">
+        <div class="flex items-center gap-3">
+            <button id="mobile-sidebar-toggle" onclick="toggleMobileSidebar()" class="lg:hidden p-2 text-gray-400 hover:text-white rounded-lg">
+                <i class="fa-solid fa-bars text-lg"></i>
+            </button>
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/20 font-bold text-lg">
+                <i class="fa-solid fa-cubes-stacked"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-base tracking-wide bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                    DriveFusion <span class="text-xs font-normal text-gray-400">Enterprise</span>
+                </h1>
+                <p class="text-[11px] text-gray-400 hidden sm:block">Unified Multi-Drive Cloud & Windows Explorer Engine</p>
+            </div>
         </div>
-        <div>
-          <h1 class="font-bold text-lg leading-tight tracking-wide bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">
-            OmniDrive Cloud
-          </h1>
-          <p class="text-xs text-slate-400 font-medium">Unified Multi-Cloud Storage Hub</p>
+
+        <!-- Global Storage Health Badge & Controls -->
+        <div class="flex items-center gap-3">
+            <div class="hidden md:flex items-center gap-3 bg-gray-900/80 border border-gray-800 px-3 py-1.5 rounded-xl">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="header-connected-count" class="text-xs font-semibold text-emerald-400">3 Google Drives Active</span>
+                </div>
+                <div class="h-4 w-px bg-gray-800"></div>
+                <span id="header-storage-summary" class="text-xs text-gray-300">28.4 GB / 130.0 GB Terpakai</span>
+            </div>
+
+            <button onclick="openGASModal()" class="px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-purple-600/20 flex items-center gap-2 transition-all">
+                <i class="fa-solid fa-code"></i>
+                <span class="hidden sm:inline">GAS Backend & DB Setup</span>
+            </button>
+
+            <button onclick="triggerQuickUpload()" class="px-3.5 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-cyan-500/20 flex items-center gap-2 transition-all">
+                <i class="fa-solid fa-cloud-arrow-up text-sm"></i>
+                <span class="hidden sm:inline">Smart Upload</span>
+            </button>
         </div>
-      </div>
-
-      <!-- Search Bar -->
-      <div class="flex-1 max-w-xl mx-6 hidden md:block">
-        <div class="relative">
-          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-          <input 
-            type="text" 
-            v-model="searchQuery" 
-            placeholder="Cari berkas, folder, atau ekstensi di seluruh cloud..." 
-            class="w-full bg-slate-900/80 border border-slate-700/80 rounded-xl pl-10 pr-10 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder-slate-500"
-          />
-          <button v-if="searchQuery" @click="searchQuery = ''" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- Quick Action Buttons Header -->
-      <div class="flex items-center space-x-2">
-        <button 
-          @click="openModal('upload')" 
-          class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs md:text-sm font-semibold px-3.5 py-2 rounded-lg shadow-md shadow-indigo-600/30 flex items-center space-x-2 transition-all active:scale-95 cursor-pointer">
-          <i class="fa-solid fa-cloud-arrow-up text-sm"></i>
-          <span class="hidden sm:inline">Unggah Berkas</span>
-        </button>
-        
-        <button 
-          @click="openModal('newFolder')" 
-          class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs md:text-sm font-medium px-3 py-2 rounded-lg flex items-center space-x-2 transition-all active:scale-95 cursor-pointer">
-          <i class="fa-solid fa-folder-plus text-indigo-400"></i>
-          <span class="hidden sm:inline">Folder Baru</span>
-        </button>
-
-        <button 
-          @click="openModal('transfer')" 
-          class="bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 text-xs md:text-sm font-medium px-3 py-2 rounded-lg flex items-center space-x-2 transition-all active:scale-95 cursor-pointer">
-          <i class="fa-solid fa-right-left text-cyan-400"></i>
-          <span class="hidden md:inline">Migrasi Cloud</span>
-        </button>
-
-        <button 
-          @click="openModal('accounts')" 
-          class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-lg border border-slate-700 relative cursor-pointer"
-          title="Kelola Akun Cloud">
-          <i class="fa-solid fa-hard-drive"></i>
-          <span class="absolute -top-1 -right-1 flex h-3 w-3">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-          </span>
-        </button>
-      </div>
     </header>
 
-    <!-- MAIN CONTENT LAYOUT -->
-    <div class="flex-1 flex overflow-hidden">
+    <!-- MAIN CONTAINER -->
+    <div class="flex-1 flex overflow-hidden relative">
 
-      <!-- LEFT SIDEBAR - DRIVE NAVIGATION -->
-      <aside class="w-64 glass-panel border-r border-slate-800 flex-col justify-between hidden lg:flex shrink-0">
-        <div class="p-4 space-y-6 overflow-y-auto">
-          
-          <!-- Storage Providers Filter -->
-          <div>
-            <div class="flex items-center justify-between mb-3 px-1">
-              <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Layanan Cloud</span>
-              <button @click="openModal('accounts')" class="text-xs text-indigo-400 hover:underline">Kelola</button>
-            </div>
-            
-            <nav class="space-y-1">
-              <button 
-                @click="selectedDrive = 'all'" 
-                :class="selectedDrive === 'all' ? 'bg-indigo-600/20 text-indigo-300 font-semibold border-l-4 border-indigo-500' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'"
-                class="w-full flex items-center justify-between px-3 py-2 rounded-r-lg text-sm transition-all text-left">
-                <div class="flex items-center space-x-2.5">
-                  <i class="fa-solid fa-cubes text-indigo-400"></i>
-                  <span>Semua Cloud Hub</span>
-                </div>
-                <span class="text-xs bg-slate-800 px-2 py-0.5 rounded-full text-slate-400">{{ files.length }}</span>
-              </button>
-
-              <button 
-                v-for="drive in drives" 
-                :key="drive.id"
-                @click="selectedDrive = drive.id"
-                :class="selectedDrive === drive.id ? 'bg-indigo-600/20 text-indigo-300 font-semibold border-l-4 border-indigo-500' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'"
-                class="w-full flex items-center justify-between px-3 py-2 rounded-r-lg text-sm transition-all text-left">
-                <div class="flex items-center space-x-2.5">
-                  <i :class="drive.icon" :style="{ color: drive.color }"></i>
-                  <span class="truncate">{{ drive.name }}</span>
-                </div>
-                <span class="text-xs bg-slate-800 px-1.5 py-0.5 rounded text-slate-400">
-                  {{ getDriveFileCount(drive.id) }}
-                </span>
-              </button>
-            </nav>
-          </div>
-
-          <!-- Quick Filters -->
-          <div>
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 px-1 block mb-2">Kategori Berkas</span>
-            <nav class="space-y-1">
-              <button 
-                v-for="cat in categories" 
-                :key="cat.id"
-                @click="selectedCategory = cat.id"
-                :class="selectedCategory === cat.id ? 'bg-indigo-600/20 text-indigo-300 font-semibold' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'"
-                class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-sm transition-all text-left">
-                <i :class="cat.icon" class="text-slate-400"></i>
-                <span>{{ cat.label }}</span>
-              </button>
-            </nav>
-          </div>
-
-          <!-- System Folders -->
-          <div>
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 px-1 block mb-2">Sistem</span>
-            <nav class="space-y-1">
-              <button 
-                @click="selectedCategory = 'trash'"
-                :class="selectedCategory === 'trash' ? 'bg-rose-500/20 text-rose-300 font-semibold' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'"
-                class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all text-left">
-                <div class="flex items-center space-x-2.5">
-                  <i class="fa-solid fa-trash-can text-rose-400"></i>
-                  <span>Sampah</span>
-                </div>
-                <span v-if="trashFiles.length > 0" class="text-xs bg-rose-950 text-rose-300 px-2 py-0.5 rounded-full">
-                  {{ trashFiles.length }}
-                </span>
-              </button>
-            </nav>
-          </div>
-
-        </div>
-
-        <!-- Unified Storage Progress Card -->
-        <div class="p-4 border-t border-slate-800 bg-slate-900/50">
-          <div class="flex items-center justify-between text-xs mb-1.5">
-            <span class="text-slate-400 font-medium">Total Kapasitas Terpakai</span>
-            <span class="text-indigo-400 font-bold">{{ totalUsedGB.toFixed(1) }} GB / {{ totalMaxGB }} GB</span>
-          </div>
-          <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden flex">
-            <div 
-              v-for="drive in drives" 
-              :key="drive.id"
-              :style="{ width: (drive.used / totalMaxGB * 100) + '%', backgroundColor: drive.color }"
-              class="h-full transition-all duration-500"
-              :title="drive.name + ': ' + drive.used + ' GB'"
-            ></div>
-          </div>
-          <div class="mt-2 text-[11px] text-slate-500 flex justify-between">
-            <span>{{ ((totalUsedGB / totalMaxGB) * 100).toFixed(1) }}% Digunakan</span>
-            <span>Sisa {{ (totalMaxGB - totalUsedGB).toFixed(1) }} GB</span>
-          </div>
-        </div>
-      </aside>
-
-      <!-- MIDDLE CONTENT AREA - FILE MANAGER -->
-      <main class="flex-1 flex flex-col overflow-hidden bg-slate-950">
-
-        <!-- TOOLBAR & BREADCRUMBS -->
-        <div class="p-4 border-b border-slate-800/80 flex flex-wrap items-center justify-between gap-3 bg-slate-900/30">
-          
-          <!-- Path & Filter Tags -->
-          <div class="flex items-center space-x-2 overflow-x-auto py-1">
-            <button 
-              @click="resetFilters" 
-              class="text-xs text-slate-400 hover:text-white flex items-center space-x-1 bg-slate-800/80 px-2.5 py-1.5 rounded-md border border-slate-700">
-              <i class="fa-solid fa-house text-indigo-400"></i>
-              <span>Root</span>
-            </button>
-            
-            <i class="fa-solid fa-chevron-right text-[10px] text-slate-600"></i>
-            
-            <span class="text-xs font-semibold px-2.5 py-1 rounded-md bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
-              <i class="fa-solid fa-filter text-indigo-400 mr-1"></i>
-              {{ getActiveFilterLabel() }}
-            </span>
-
-            <span v-if="selectedCategory !== 'all'" class="text-xs font-semibold px-2.5 py-1 rounded-md bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
-              Kategori: {{ categories.find(c => c.id === selectedCategory)?.label || selectedCategory }}
-            </span>
-          </div>
-
-          <!-- Actions & View Switcher -->
-          <div class="flex items-center space-x-2">
-            
-            <!-- Selection Bulk Actions -->
-            <div v-if="selectedFileIds.length > 0" class="flex items-center space-x-2 bg-indigo-950/80 border border-indigo-500/40 rounded-lg px-2.5 py-1">
-              <span class="text-xs text-indigo-200 font-medium mr-1">{{ selectedFileIds.length }} Terpilih</span>
-              
-              <button @click="batchDelete" title="Hapus Terpilih" class="text-rose-400 hover:text-rose-300 text-xs p-1">
-                <i class="fa-solid fa-trash"></i>
-              </button>
-              
-              <button @click="batchDownload" title="Unduh Terpilih" class="text-cyan-400 hover:text-cyan-300 text-xs p-1">
-                <i class="fa-solid fa-download"></i>
-              </button>
-              
-              <button @click="selectedFileIds = []" title="Batal Pilih" class="text-slate-400 hover:text-white text-xs p-1">
-                <i class="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-
-            <!-- Sort Option -->
-            <select v-model="sortBy" class="bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500">
-              <option value="name">Urutkan: Nama</option>
-              <option value="size">Urutkan: Ukuran</option>
-              <option value="date">Urutkan: Tanggal</option>
-            </select>
-
-            <!-- View Toggle -->
-            <div class="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-0.5">
-              <button 
-                @click="viewMode = 'grid'" 
-                :class="viewMode === 'grid' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'"
-                class="px-2.5 py-1 rounded text-xs transition-all">
-                <i class="fa-solid fa-border-all"></i>
-              </button>
-              <button 
-                @click="viewMode = 'list'" 
-                :class="viewMode === 'list' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'"
-                class="px-2.5 py-1 rounded text-xs transition-all">
-                <i class="fa-solid fa-list"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- FILE DISPLAY LIST / GRID -->
-        <div class="flex-1 overflow-y-auto p-4 sm:p-6">
-          
-          <!-- Empty State -->
-          <div v-if="filteredFiles.length === 0" class="h-64 flex flex-col items-center justify-center text-center p-6 border-2 border-dashed border-slate-800 rounded-2xl">
-            <i class="fa-regular fa-folder-open text-4xl text-slate-600 mb-3"></i>
-            <h3 class="text-slate-300 font-semibold text-base">Tidak ada berkas ditemukan</h3>
-            <p class="text-xs text-slate-500 max-w-sm mt-1">Coba sesuaikan kata kunci pencarian, ubah filter drive, atau unggah berkas baru.</p>
-            <button @click="openModal('upload')" class="mt-4 bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-lg font-medium">
-              Unggah Sekarang
-            </button>
-          </div>
-
-          <!-- GRID VIEW -->
-          <div v-if="viewMode === 'grid' && filteredFiles.length > 0" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-            <div 
-              v-for="file in filteredFiles" 
-              :key="file.id"
-              @click="selectFile(file)"
-              :class="[
-                activeFile?.id === file.id ? 'border-indigo-500 bg-indigo-950/20 shadow-lg shadow-indigo-500/10' : 'border-slate-800/80 glass-card hover:border-slate-700',
-                selectedFileIds.includes(file.id) ? 'ring-2 ring-indigo-500' : ''
-              ]"
-              class="group relative rounded-xl p-4 transition-all duration-200 cursor-pointer flex flex-col justify-between"
-            >
-              <!-- Checkbox overlay -->
-              <input 
-                type="checkbox" 
-                :checked="selectedFileIds.includes(file.id)"
-                @click.stop="toggleSelectFile(file.id)"
-                class="absolute top-3 left-3 rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-0 z-10 cursor-pointer opacity-70 group-hover:opacity-100"
-              />
-
-              <!-- Cloud Badge -->
-              <div class="flex items-center justify-between mb-3 pl-6">
-                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center space-x-1" :style="{ backgroundColor: getDriveInfo(file.driveId).color + '20', color: getDriveInfo(file.driveId).color }">
-                  <i :class="getDriveInfo(file.driveId).icon"></i>
-                  <span>{{ getDriveInfo(file.driveId).name }}</span>
-                </span>
+        <!-- SIDEBAR NAVIGATION -->
+        <aside id="main-sidebar" class="w-64 bg-gray-900/90 border-r border-gray-800 flex flex-col justify-between z-20 flex-shrink-0 transition-all duration-300 -translate-x-full lg:translate-x-0 absolute lg:relative inset-y-0 left-0">
+            <div class="p-4 space-y-5 overflow-y-auto flex-1">
                 
-                <!-- Quick Dropdown Menu Button -->
-                <button @click.stop="openFileMenu(file)" class="text-slate-400 hover:text-white text-xs p-1">
-                  <i class="fa-solid fa-ellipsis-vertical"></i>
-                </button>
-              </div>
-
-              <!-- Thumbnail / Icon -->
-              <div class="h-24 flex items-center justify-center my-2 rounded-lg bg-slate-900/60 overflow-hidden relative">
-                <img v-if="file.type === 'image' && file.previewUrl" :src="file.previewUrl" class="w-full h-full object-cover rounded-lg group-hover:scale-105 transition-transform duration-300" alt="Preview" />
-                <i v-else :class="[getFileIcon(file.type), getFileColor(file.type)]" class="text-4xl"></i>
-              </div>
-
-              <!-- File Meta -->
-              <div class="mt-2">
-                <h4 class="text-xs font-semibold text-slate-200 truncate group-hover:text-indigo-300 transition-colors" :title="file.name">
-                  {{ file.name }}
-                </h4>
-                <div class="flex items-center justify-between text-[11px] text-slate-500 mt-1">
-                  <span>{{ formatSize(file.sizeMB) }}</span>
-                  <span>{{ file.updatedAt }}</span>
+                <!-- Main Navigation Tabs -->
+                <div class="space-y-1">
+                    <p class="px-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Navigasi Utama</p>
+                    <button onclick="switchTab('explorer')" id="nav-explorer" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-xs text-cyan-400 bg-cyan-500/10 transition-all">
+                        <i class="fa-solid fa-folder-tree w-5 text-center text-sm"></i> File Explorer
+                    </button>
+                    <button onclick="switchTab('drives')" id="nav-drives" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-xs text-gray-400 hover:text-gray-200 hover:bg-gray-800/60 transition-all">
+                        <i class="fa-solid fa-hard-drive w-5 text-center text-sm"></i> Akun Drive Terhubung
+                        <span id="badge-drive-count" class="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-gray-800 text-gray-300">3</span>
+                    </button>
+                    <button onclick="switchTab('recent')" id="nav-recent" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-xs text-gray-400 hover:text-gray-200 hover:bg-gray-800/60 transition-all">
+                        <i class="fa-solid fa-clock-rotate-left w-5 text-center text-sm"></i> Berkas Terbaru
+                    </button>
+                    <button onclick="switchTab('trash')" id="nav-trash" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-xs text-gray-400 hover:text-gray-200 hover:bg-gray-800/60 transition-all">
+                        <i class="fa-solid fa-trash-can w-5 text-center text-sm"></i> Tempat Sampah
+                    </button>
                 </div>
-              </div>
-            </div>
-          </div>
 
-          <!-- LIST TABLE VIEW -->
-          <div v-if="viewMode === 'list' && filteredFiles.length > 0" class="glass-card rounded-xl overflow-hidden border border-slate-800">
-            <div class="overflow-x-auto">
-              <table class="w-full text-left text-xs text-slate-300">
-                <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
-                  <tr>
-                    <th class="p-3.5 w-8">
-                      <input type="checkbox" @change="toggleSelectAll" :checked="selectedFileIds.length === filteredFiles.length" class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0 cursor-pointer">
-                    </th>
-                    <th class="p-3.5">Nama Berkas</th>
-                    <th class="p-3.5">Penyimpanan Cloud</th>
-                    <th class="p-3.5">Ukuran</th>
-                    <th class="p-3.5">Terakhir Diubah</th>
-                    <th class="p-3.5 text-right">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-800/60">
-                  <tr 
-                    v-for="file in filteredFiles" 
-                    :key="file.id"
-                    @click="selectFile(file)"
-                    :class="activeFile?.id === file.id ? 'bg-indigo-950/30' : 'hover:bg-slate-900/50'"
-                    class="transition-colors cursor-pointer group"
-                  >
-                    <td class="p-3.5" @click.stop>
-                      <input type="checkbox" :checked="selectedFileIds.includes(file.id)" @change="toggleSelectFile(file.id)" class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0 cursor-pointer">
-                    </td>
-                    <td class="p-3.5 font-medium text-slate-200">
-                      <div class="flex items-center space-x-3">
-                        <i :class="[getFileIcon(file.type), getFileColor(file.type)]" class="text-base"></i>
-                        <span class="truncate max-w-xs group-hover:text-indigo-300">{{ file.name }}</span>
-                      </div>
-                    </td>
-                    <td class="p-3.5">
-                      <span class="inline-flex items-center space-x-1.5 text-[11px] font-medium" :style="{ color: getDriveInfo(file.driveId).color }">
-                        <i :class="getDriveInfo(file.driveId).icon"></i>
-                        <span>{{ getDriveInfo(file.driveId).name }}</span>
-                      </span>
-                    </td>
-                    <td class="p-3.5 text-slate-400">{{ formatSize(file.sizeMB) }}</td>
-                    <td class="p-3.5 text-slate-400">{{ file.updatedAt }}</td>
-                    <td class="p-3.5 text-right space-x-2" @click.stop>
-                      <button @click="previewFile(file)" title="Pratinjau" class="text-slate-400 hover:text-cyan-400 transition-colors">
-                        <i class="fa-solid fa-eye"></i>
-                      </button>
-                      <button @click="openShareModal(file)" title="Bagikan" class="text-slate-400 hover:text-indigo-400 transition-colors">
-                        <i class="fa-solid fa-share-nodes"></i>
-                      </button>
-                      <button @click="deleteFile(file)" title="Hapus" class="text-slate-400 hover:text-rose-400 transition-colors">
-                        <i class="fa-solid fa-trash"></i>
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+                <!-- Windows Explorer Folder Tree View -->
+                <div class="space-y-2 pt-3 border-t border-gray-800">
+                    <p class="px-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Folder Navigation Tree</p>
+                    <div id="sidebar-folder-tree" class="space-y-1 text-xs">
+                        <!-- Dynamic Folder Tree rendered by JS -->
+                    </div>
+                </div>
 
-        </div>
-      </main>
-
-      <!-- RIGHT SIDEBAR - FILE INSPECTOR PANEL -->
-      <aside v-if="activeFile" class="w-80 glass-panel border-l border-slate-800 hidden xl:flex flex-col justify-between shrink-0 overflow-y-auto">
-        <div class="p-5 space-y-6">
-          
-          <!-- Header & Close -->
-          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-            <h3 class="font-semibold text-sm text-slate-200">Detail Berkas</h3>
-            <button @click="activeFile = null" class="text-slate-400 hover:text-white text-xs">
-              <i class="fa-solid fa-xmark"></i>
-            </button>
-          </div>
-
-          <!-- Preview Thumb Box -->
-          <div class="rounded-xl bg-slate-900 border border-slate-800 p-4 flex flex-col items-center justify-center text-center">
-            <div class="w-full h-36 flex items-center justify-center overflow-hidden rounded-lg bg-slate-950 mb-3">
-              <img v-if="activeFile.type === 'image' && activeFile.previewUrl" :src="activeFile.previewUrl" class="w-full h-full object-cover" alt="Preview" />
-              <i v-else :class="[getFileIcon(activeFile.type), getFileColor(activeFile.type)]" class="text-5xl"></i>
-            </div>
-            <h4 class="font-semibold text-xs text-slate-200 w-full break-all">{{ activeFile.name }}</h4>
-            <p class="text-[11px] text-slate-400 mt-1">{{ formatSize(activeFile.sizeMB) }}</p>
-          </div>
-
-          <!-- Metadata List -->
-          <div class="space-y-3 text-xs">
-            <div class="flex justify-between py-1 border-b border-slate-800/60">
-              <span class="text-slate-400">Layanan Cloud</span>
-              <span class="font-medium flex items-center space-x-1" :style="{ color: getDriveInfo(activeFile.driveId).color }">
-                <i :class="getDriveInfo(activeFile.driveId).icon"></i>
-                <span>{{ getDriveInfo(activeFile.driveId).name }}</span>
-              </span>
+                <!-- Drive Storage Capacity Widgets -->
+                <div class="space-y-3 pt-3 border-t border-gray-800">
+                    <p class="px-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Status Kapasitas Drive</p>
+                    <div id="sidebar-drive-list" class="space-y-2">
+                        <!-- Dynamic Drive Storage Progress Bars by JS -->
+                    </div>
+                </div>
             </div>
 
-            <div class="flex justify-between py-1 border-b border-slate-800/60">
-              <span class="text-slate-400">Tipe Berkas</span>
-              <span class="font-medium text-slate-200 uppercase">{{ activeFile.extension || activeFile.type }}</span>
+            <!-- Auto Allocation Engine Status Footer -->
+            <div class="p-3 border-t border-gray-800 bg-gray-950/60 text-[11px] text-gray-400">
+                <div class="flex items-center justify-between mb-1">
+                    <span class="font-medium text-gray-300">Auto Storage Engine</span>
+                    <i class="fa-solid fa-bolt text-amber-400 animate-pulse"></i>
+                </div>
+                <p class="text-[10px] text-gray-500">Mengarahkan file baru ke Google Drive dengan sisa ruang terbesar secara otomatis.</p>
             </div>
+        </aside>
 
-            <div class="flex justify-between py-1 border-b border-slate-800/60">
-              <span class="text-slate-400">Terakhir Diubah</span>
-              <span class="font-medium text-slate-200">{{ activeFile.updatedAt }}</span>
-            </div>
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 flex flex-col min-w-0 bg-darkbg overflow-hidden relative">
 
-            <div class="flex justify-between py-1 border-b border-slate-800/60">
-              <span class="text-slate-400">Enkripsi Cloud</span>
-              <span class="font-medium text-emerald-400 flex items-center space-x-1">
-                <i class="fa-solid fa-shield-halved"></i>
-                <span>AES-256 Bit</span>
-              </span>
-            </div>
-          </div>
+            <!-- TAB 1: WINDOWS FILE EXPLORER VIEW -->
+            <section id="tab-explorer" class="flex-1 flex flex-col h-full overflow-hidden">
+                
+                <!-- Windows Explorer Toolbar Bar -->
+                <div class="p-3 bg-gray-900/40 border-b border-gray-800 flex flex-wrap items-center justify-between gap-3">
+                    
+                    <!-- Left Toolbar Buttons -->
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <button onclick="createNewFolderModal()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg text-xs font-medium flex items-center gap-2 border border-gray-700">
+                            <i class="fa-solid fa-folder-plus text-amber-400"></i> Folder Baru
+                        </button>
+                        <button onclick="triggerQuickUpload()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg text-xs font-medium flex items-center gap-2 border border-gray-700">
+                            <i class="fa-solid fa-file-arrow-up text-cyan-400"></i> Unggah File
+                        </button>
 
-          <!-- Actions Stack -->
-          <div class="space-y-2 pt-2">
-            <button 
-              @click="previewFile(activeFile)" 
-              class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium py-2 rounded-lg flex items-center justify-center space-x-2 transition-colors cursor-pointer">
-              <i class="fa-solid fa-eye text-cyan-400"></i>
-              <span>Pratinjau Berkas</span>
-            </button>
+                        <div class="h-4 w-px bg-gray-800 mx-1"></div>
 
-            <button 
-              @click="openShareModal(activeFile)" 
-              class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-2 rounded-lg flex items-center justify-center space-x-2 shadow-md shadow-indigo-600/20 transition-colors cursor-pointer">
-              <i class="fa-solid fa-share-nodes"></i>
-              <span>Bagikan Tautan</span>
-            </button>
+                        <button onclick="triggerCutSelected()" id="btn-cut" class="p-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs disabled:opacity-40" title="Cut (Ctrl+X)">
+                            <i class="fa-solid fa-scissors"></i>
+                        </button>
+                        <button onclick="triggerCopySelected()" id="btn-copy" class="p-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs disabled:opacity-40" title="Copy (Ctrl+C)">
+                            <i class="fa-regular fa-copy"></i>
+                        </button>
+                        <button onclick="triggerPaste()" id="btn-paste" class="p-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs disabled:opacity-40" title="Paste (Ctrl+V)">
+                            <i class="fa-solid fa-paste text-cyan-400"></i>
+                        </button>
+                        <button onclick="triggerDeleteSelected()" id="btn-delete" class="p-2 bg-gray-800 hover:bg-red-900/40 text-red-400 rounded-lg text-xs disabled:opacity-40" title="Delete">
+                            <i class="fa-regular fa-trash-can"></i>
+                        </button>
+                    </div>
 
-            <button 
-              @click="deleteFile(activeFile)" 
-              class="w-full bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/40 text-xs font-medium py-2 rounded-lg flex items-center justify-center space-x-2 transition-colors cursor-pointer">
-              <i class="fa-solid fa-trash-can"></i>
-              <span>Pindahkan ke Sampah</span>
-            </button>
-          </div>
+                    <!-- Right Toolbar Controls (View Modes & Sorting) -->
+                    <div class="flex items-center gap-2">
+                        <!-- Search Box -->
+                        <div class="relative w-40 sm:w-64">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
+                            <input type="text" id="explorer-search" oninput="handleSearch(this.value)" placeholder="Cari di semua drive..." class="w-full bg-gray-900 border border-gray-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-cyan-500">
+                        </div>
 
-        </div>
-      </aside>
+                        <!-- View Mode Toggles -->
+                        <div class="flex items-center bg-gray-900 border border-gray-800 rounded-lg p-0.5">
+                            <button onclick="setViewMode('thumbnails')" id="view-thumbnails" class="p-1.5 text-gray-400 rounded hover:text-white" title="Large Thumbnails">
+                                <i class="fa-solid fa-border-all text-xs"></i>
+                            </button>
+                            <button onclick="setViewMode('grid')" id="view-grid" class="p-1.5 text-cyan-400 bg-gray-800 rounded shadow" title="Grid / Tiles">
+                                <i class="fa-solid fa-grip text-xs"></i>
+                            </button>
+                            <button onclick="setViewMode('details')" id="view-details" class="p-1.5 text-gray-400 rounded hover:text-white" title="Details List">
+                                <i class="fa-solid fa-list text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
+                <!-- Windows Explorer Breadcrumb Address Bar -->
+                <div class="px-4 py-2 bg-gray-950/60 border-b border-gray-800 flex items-center justify-between gap-3 text-xs">
+                    <div class="flex items-center gap-1.5 overflow-x-auto py-0.5" id="explorer-breadcrumbs">
+                        <!-- Dynamic Breadcrumbs JS Inject -->
+                    </div>
+                    <div class="text-[11px] text-gray-400 font-medium whitespace-nowrap" id="explorer-file-count">
+                        0 item
+                    </div>
+                </div>
+
+                <!-- Active Clipboard Notification Banner -->
+                <div id="clipboard-banner" class="hidden px-4 py-2 bg-cyan-950/60 border-b border-cyan-800/60 flex items-center justify-between text-xs text-cyan-300">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-clipboard text-cyan-400"></i>
+                        <span id="clipboard-banner-text">1 item disalin ke clipboard</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="triggerPaste()" class="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold rounded-md">Tempel Sekarang</button>
+                        <button onclick="clearClipboard()" class="p-1 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                </div>
+
+                <!-- File Viewport Container -->
+                <div class="flex-1 p-4 overflow-y-auto" id="explorer-viewport" oncontextmenu="handleBlankContextMenu(event)">
+                    <!-- Items rendered dynamically in Grid, Thumbnails, or Details List -->
+                </div>
+            </section>
+
+            <!-- TAB 2: CONNECTED ACCOUNTS MANAGEMENT -->
+            <section id="tab-drives" class="flex-1 p-6 overflow-y-auto hidden">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-100">Akun Google Drive Terhubung</h2>
+                        <p class="text-xs text-gray-400 mt-1">Kelola beberapa akun Google Drive yang digabungkan ke dalam 1 sistem storage tunggal.</p>
+                    </div>
+                    <button onclick="openConnectDriveModal()" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-cyan-500/20 flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Hubungkan Akun Google Drive Baru
+                    </button>
+                </div>
+
+                <!-- Drives Grid Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="drives-management-grid">
+                    <!-- Dynamic Drive Cards injected by JS -->
+                </div>
+            </section>
+
+            <!-- TAB 3: RECENT FILES -->
+            <section id="tab-recent" class="flex-1 p-6 overflow-y-auto hidden">
+                <h2 class="text-lg font-bold text-gray-100 mb-4">Berkas Terbaru</h2>
+                <div class="glass-panel rounded-2xl p-4">
+                    <div id="recent-files-container"></div>
+                </div>
+            </section>
+
+            <!-- TAB 4: TRASH / RECYCLE BIN -->
+            <section id="tab-trash" class="flex-1 p-6 overflow-y-auto hidden">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-bold text-gray-100">Tempat Sampah (Recycle Bin)</h2>
+                    <button onclick="emptyTrash()" class="px-3.5 py-1.5 bg-red-900/40 hover:bg-red-800/60 text-red-300 border border-red-800/60 rounded-xl text-xs font-semibold">
+                        Kosongkan Sampah
+                    </button>
+                </div>
+                <div class="glass-panel rounded-2xl p-4">
+                    <div id="trash-files-container"></div>
+                </div>
+            </section>
+        </main>
     </div>
 
-    <!-- MODAL: MANAGE CLOUD ACCOUNTS -->
-    <div v-if="modals.accounts" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div class="glass-panel w-full max-w-lg rounded-2xl p-6 border border-slate-700 shadow-2xl relative">
-        <div class="flex items-center justify-between pb-4 border-b border-slate-800">
-          <div class="flex items-center space-x-2">
-            <i class="fa-solid fa-hard-drive text-indigo-400 text-lg"></i>
-            <h3 class="font-bold text-base text-white">Kelola Akun Cloud Storage</h3>
-          </div>
-          <button @click="closeModal('accounts')" class="text-slate-400 hover:text-white">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-
-        <div class="mt-4 space-y-3 max-h-96 overflow-y-auto pr-1">
-          <div 
-            v-for="drive in drives" 
-            :key="drive.id"
-            class="flex items-center justify-between p-3.5 rounded-xl bg-slate-900 border border-slate-800"
-          >
-            <div class="flex items-center space-x-3">
-              <div class="w-10 h-10 rounded-lg flex items-center justify-center bg-slate-800" :style="{ color: drive.color }">
-                <i :class="drive.icon" class="text-xl"></i>
-              </div>
-              <div>
-                <h4 class="font-semibold text-xs text-white">{{ drive.name }}</h4>
-                <p class="text-[11px] text-slate-400">{{ drive.used }} GB terpakai dari {{ drive.capacityGB }} GB</p>
-              </div>
-            </div>
-
-            <div class="flex items-center space-x-2">
-              <span v-if="drive.connected" class="text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-                Terhubung
-              </span>
-              <button 
-                @click="toggleDriveConnection(drive)"
-                :class="drive.connected ? 'bg-rose-950/50 text-rose-300 border-rose-800' : 'bg-indigo-600 text-white'"
-                class="text-xs px-3 py-1.5 rounded-lg font-medium border border-transparent transition-all cursor-pointer">
-                {{ drive.connected ? 'Putuskan' : 'Hubungkan' }}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="mt-6 pt-4 border-t border-slate-800 flex justify-end">
-          <button @click="closeModal('accounts')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg cursor-pointer">
-            Tutup
-          </button>
-        </div>
-      </div>
+    <!-- WINDOWS CONTEXT MENU (RIGHT-CLICK) -->
+    <div id="context-menu" class="context-menu w-52 bg-gray-900/95 border border-gray-700/80 rounded-xl shadow-2xl backdrop-blur-xl p-1.5 text-xs text-gray-200">
+        <button onclick="ctxPreview()" class="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-gray-800 rounded-lg transition-colors">
+            <i class="fa-solid fa-eye text-cyan-400 w-4"></i> Pratinjau / Preview
+        </button>
+        <div class="h-px bg-gray-800 my-1"></div>
+        <button onclick="ctxCut()" class="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-gray-800 rounded-lg transition-colors">
+            <i class="fa-solid fa-scissors text-purple-400 w-4"></i> Potong (Cut)
+        </button>
+        <button onclick="ctxCopy()" class="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-gray-800 rounded-lg transition-colors">
+            <i class="fa-regular fa-copy text-blue-400 w-4"></i> Salin (Copy)
+        </button>
+        <button onclick="ctxMoveTo()" class="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-gray-800 rounded-lg transition-colors">
+            <i class="fa-solid fa-folder-tree text-amber-400 w-4"></i> Pindahkan Ke...
+        </button>
+        <button onclick="ctxRename()" class="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-gray-800 rounded-lg transition-colors">
+            <i class="fa-solid fa-pen text-emerald-400 w-4"></i> Ubah Nama (Rename)
+        </button>
+        <div class="h-px bg-gray-800 my-1"></div>
+        <button onclick="ctxDelete()" class="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-red-900/40 text-red-400 rounded-lg transition-colors">
+            <i class="fa-regular fa-trash-can w-4"></i> Hapus (Delete)
+        </button>
     </div>
 
-    <!-- MODAL: UPLOAD FILE -->
-    <div v-if="modals.upload" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div class="glass-panel w-full max-w-md rounded-2xl p-6 border border-slate-700 shadow-2xl relative">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-          <h3 class="font-bold text-base text-white">Unggah Berkas Baru</h3>
-          <button @click="closeModal('upload')" class="text-slate-400 hover:text-white">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-
-        <div class="mt-4 space-y-4">
-          <!-- Drive Selector Target -->
-          <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">Target Cloud Storage</label>
-            <select v-model="uploadForm.driveId" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-              <option v-for="d in connectedDrives" :key="d.id" :value="d.id">
-                {{ d.name }} (Sisa {{ d.capacityGB - d.used }} GB)
-              </option>
-            </select>
-          </div>
-
-          <!-- File Name -->
-          <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">Nama Berkas</label>
-            <input type="text" v-model="uploadForm.fileName" placeholder="contoh: Laporan_Q4_2026.pdf" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-          </div>
-
-          <!-- File Category / Type -->
-          <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">Tipe Berkas</label>
-            <select v-model="uploadForm.type" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-              <option value="document">Dokumen (.pdf, .docx, .xlsx)</option>
-              <option value="image">Gambar (.png, .jpg, .svg)</option>
-              <option value="code">Kode (.js, .html, .py)</option>
-              <option value="archive">Arsip (.zip, .rar, .7z)</option>
-            </select>
-          </div>
-
-          <!-- Simulated File Drop Box -->
-          <div @click="triggerSimulatedFileSelect" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl p-6 text-center cursor-pointer transition-colors bg-slate-900/40">
-            <i class="fa-solid fa-cloud-arrow-up text-3xl text-indigo-400 mb-2"></i>
-            <p class="text-xs font-medium text-slate-300">Klik untuk memilih simulasi berkas</p>
-            <p class="text-[11px] text-slate-500 mt-1">Ukuran simulasi acak: 5MB - 45MB</p>
-          </div>
-
-          <!-- Upload Progress Bar if Uploading -->
-          <div v-if="isUploading" class="space-y-1">
-            <div class="flex justify-between text-xs text-slate-400">
-              <span>Mengunggah ke cloud...</span>
-              <span>{{ uploadProgress }}%</span>
+    <!-- MULTI-MEDIA RICH PREVIEW MODAL -->
+    <div id="preview-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="glass-panel bg-gray-900/90 border-gray-700 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+            <!-- Modal Header -->
+            <div class="p-4 border-b border-gray-800 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <i id="preview-icon" class="text-xl"></i>
+                    <div>
+                        <h3 id="preview-title" class="font-bold text-gray-100 text-sm">Preview File</h3>
+                        <p id="preview-subtitle" class="text-[11px] text-gray-400"></p>
+                    </div>
+                </div>
+                <button onclick="closePreviewModal()" class="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
             </div>
-            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-              <div class="bg-indigo-500 h-full transition-all duration-200" :style="{ width: uploadProgress + '%' }"></div>
+            <!-- Modal Content Viewport -->
+            <div id="preview-body" class="flex-1 p-6 overflow-auto flex items-center justify-center bg-gray-950/60 min-h-[350px]">
+                <!-- Dynamic Media Content HTML Inject -->
             </div>
-          </div>
         </div>
-
-        <div class="mt-6 flex justify-end space-x-2">
-          <button @click="closeModal('upload')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-4 py-2 rounded-lg font-medium cursor-pointer">
-            Batal
-          </button>
-          <button @click="submitUpload" :disabled="isUploading || !uploadForm.fileName" class="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs px-4 py-2 rounded-lg font-semibold shadow-md shadow-indigo-600/30 cursor-pointer">
-            Mulai Unggah
-          </button>
-        </div>
-      </div>
     </div>
 
-    <!-- MODAL: SHARE FILE -->
-    <div v-if="modals.share && activeFile" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div class="glass-panel w-full max-w-md rounded-2xl p-6 border border-slate-700 shadow-2xl relative">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-          <h3 class="font-bold text-base text-white">Bagikan {{ activeFile.name }}</h3>
-          <button @click="closeModal('share')" class="text-slate-400 hover:text-white">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-
-        <div class="mt-4 space-y-4 text-xs">
-          <div>
-            <label class="block text-slate-400 mb-1">Tautan Akses Publik</label>
-            <div class="flex items-center space-x-2">
-              <input type="text" readonly :value="generatedShareUrl" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-indigo-300 text-xs focus:outline-none">
-              <button @click="copyShareLink" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg font-semibold whitespace-nowrap cursor-pointer">
-                <i class="fa-solid fa-copy mr-1"></i> Salin
-              </button>
+    <!-- GOOGLE APPS SCRIPT (GAS) BACKEND & DATABASE SETUP MODAL -->
+    <div id="gas-setup-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="glass-panel bg-gray-900 border-gray-700 rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+            <div class="p-4 border-b border-gray-800 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 bg-purple-500/20 text-purple-400 rounded-xl">
+                        <i class="fa-solid fa-code text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-100 text-base">Google Apps Script (GAS) Enterprise Setup</h3>
+                        <p class="text-xs text-gray-400">Kode Server Code.gs & Otomatisasi Database Google Sheets</p>
+                    </div>
+                </div>
+                <button onclick="closeGASModal()" class="p-1 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
             </div>
-          </div>
-
-          <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800 space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-slate-300 font-medium">Atur Perlindungan Kata Sandi</span>
-              <input type="checkbox" v-model="shareOptions.hasPassword" class="rounded bg-slate-800 border-slate-700 text-indigo-600 cursor-pointer">
-            </div>
-            <input v-if="shareOptions.hasPassword" type="password" v-model="shareOptions.password" placeholder="Masukkan kata sandi..." class="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-slate-200">
-
-            <div class="flex items-center justify-between pt-2">
-              <span class="text-slate-300 font-medium">Tenggat Waktu Akses</span>
-              <select v-model="shareOptions.expiry" class="bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-slate-300">
-                <option value="24h">24 Jam</option>
-                <option value="7d">7 Hari</option>
-                <option value="never">Tidak Pernah Kadaluarsa</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div class="mt-6 flex justify-end">
-          <button @click="closeModal('share')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-lg font-semibold cursor-pointer">
-            Selesai
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- MODAL: CROSS-CLOUD TRANSFER -->
-    <div v-if="modals.transfer" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div class="glass-panel w-full max-w-lg rounded-2xl p-6 border border-slate-700 shadow-2xl relative">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-          <div class="flex items-center space-x-2">
-            <i class="fa-solid fa-right-left text-cyan-400 text-lg"></i>
-            <h3 class="font-bold text-base text-white">Migrasi Berkas Antar-Cloud</h3>
-          </div>
-          <button @click="closeModal('transfer')" class="text-slate-400 hover:text-white">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-
-        <div class="mt-4 space-y-4 text-xs">
-          <!-- Source Drive -->
-          <div>
-            <label class="block text-slate-400 mb-1">Pilih Berkas Asal</label>
-            <select v-model="transferForm.fileId" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200">
-              <option v-for="f in files" :key="f.id" :value="f.id">
-                [{{ getDriveInfo(f.driveId).name }}] {{ f.name }} ({{ formatSize(f.sizeMB) }})
-              </option>
-            </select>
-          </div>
-
-          <!-- Target Drive -->
-          <div>
-            <label class="block text-slate-400 mb-1">Target Cloud Tujuan</label>
-            <select v-model="transferForm.targetDriveId" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200">
-              <option v-for="d in connectedDrives" :key="d.id" :value="d.id">
-                {{ d.name }}
-              </option>
-            </select>
-          </div>
-
-          <!-- Transfer Progress Status -->
-          <div v-if="isTransferring" class="p-4 bg-slate-900 rounded-xl border border-cyan-500/30 space-y-2">
-            <div class="flex justify-between items-center font-medium">
-              <span class="text-cyan-300">Memindahkan berkas lintas server...</span>
-              <span class="text-cyan-400">{{ transferProgress }}%</span>
-            </div>
-            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-              <div class="bg-cyan-500 h-full transition-all duration-200" :style="{ width: transferProgress + '%' }"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="mt-6 flex justify-end space-x-2">
-          <button @click="closeModal('transfer')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-4 py-2 rounded-lg font-medium cursor-pointer">
-            Batal
-          </button>
-          <button @click="startTransfer" :disabled="isTransferring || !transferForm.fileId" class="bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white text-xs px-4 py-2 rounded-lg font-semibold shadow-md shadow-cyan-600/30 cursor-pointer">
-            Mulai Transfer
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- MODAL: NEW FOLDER -->
-    <div v-if="modals.newFolder" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div class="glass-panel w-full max-w-sm rounded-2xl p-6 border border-slate-700 shadow-2xl relative">
-        <h3 class="font-bold text-base text-white mb-3">Buat Folder Baru</h3>
-        <input type="text" v-model="newFolderName" placeholder="Nama folder..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 mb-4">
-        <div class="flex justify-end space-x-2">
-          <button @click="closeModal('newFolder')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-4 py-2 rounded-lg font-medium cursor-pointer">Batal</button>
-          <button @click="createNewFolder" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-lg font-semibold cursor-pointer">Buat</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- MODAL: FILE PREVIEW -->
-    <div v-if="modals.preview && previewingFile" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div class="glass-panel w-full max-w-3xl rounded-2xl p-6 border border-slate-700 shadow-2xl relative flex flex-col max-h-[85vh]">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-          <div class="flex items-center space-x-2">
-            <i :class="getFileIcon(previewingFile.type)" class="text-indigo-400"></i>
-            <h3 class="font-bold text-sm text-white truncate max-w-md">{{ previewingFile.name }}</h3>
-          </div>
-          <button @click="closeModal('preview')" class="text-slate-400 hover:text-white">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-
-        <div class="my-4 flex-1 overflow-auto flex items-center justify-center bg-slate-950 rounded-xl p-4 border border-slate-800">
-          <img v-if="previewingFile.type === 'image' && previewingFile.previewUrl" :src="previewingFile.previewUrl" class="max-h-96 object-contain rounded-lg" alt="Preview Image" />
-          
-          <div v-else-if="previewingFile.type === 'code'" class="w-full font-mono text-xs text-emerald-400 bg-slate-900 p-4 rounded-lg overflow-x-auto text-left">
-            <code>
-              // Preview Code Snippet<br>
-              function omniCloudSync() {<br>
-              &nbsp;&nbsp;console.log("Syncing {{ previewingFile.name }}...");<br>
-              &nbsp;&nbsp;return { status: 200, encrypted: true };<br>
-              }<br>
-              omniCloudSync();
-            </code>
-          </div>
-
-          <div v-else class="text-center p-8">
-            <i :class="getFileIcon(previewingFile.type)" class="text-6xl text-slate-600 mb-3"></i>
-            <p class="text-xs text-slate-400">Pratinjau langsung tidak tersedia untuk format berkas ini.</p>
-            <p class="text-[11px] text-slate-500 mt-1 font-mono">{{ previewingFile.name }} ({{ formatSize(previewingFile.sizeMB) }})</p>
-          </div>
-        </div>
-
-        <div class="flex justify-end space-x-2">
-          <button @click="closeModal('preview')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-4 py-2 rounded-lg font-medium cursor-pointer">Tutup</button>
-          <button @click="downloadFile(previewingFile)" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-lg font-semibold cursor-pointer">
-            <i class="fa-solid fa-download mr-1"></i> Unduh Berkas
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- TOAST NOTIFICATIONS CONTAINER -->
-    <div class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none">
-      <div 
-        v-for="toast in toasts" 
-        :key="toast.id"
-        class="pointer-events-auto flex items-center space-x-3 px-4 py-3 rounded-xl glass-panel border border-slate-700 shadow-2xl text-xs text-white transition-all transform duration-300 animate-bounce-short"
-      >
-        <i :class="toast.icon" :style="{ color: toast.color || '#818cf8' }" class="text-base"></i>
-        <span>{{ toast.message }}</span>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- JAVASCRIPT APPLICATION LOGIC -->
-  <script>
-    const { createApp, ref, computed } = Vue;
-
-    createApp({
-      setup() {
-        // DRIVE PROVIDERS STATE (Penggunaan penyimpanan diawali dari 0 GB)
-        const drives = ref([
-          { id: 'gdrive', name: 'Google Drive', icon: 'fa-brands fa-google-drive', color: '#34A853', used: 0.0, capacityGB: 15.0, connected: true },
-          { id: 's3', name: 'AWS S3 Vault', icon: 'fa-brands fa-aws', color: '#FF9900', used: 0.0, capacityGB: 100.0, connected: true },
-          { id: 'onedrive', name: 'Microsoft OneDrive', icon: 'fa-brands fa-microsoft', color: '#0078D4', used: 0.0, capacityGB: 50.0, connected: true },
-          { id: 'dropbox', name: 'Dropbox Pro', icon: 'fa-brands fa-dropbox', color: '#0061FE', used: 0.0, capacityGB: 20.0, connected: true },
-          { id: 'mega', name: 'MEGA Encrypted', icon: 'fa-solid fa-M', color: '#D9272E', used: 0.0, capacityGB: 20.0, connected: false }
-        ]);
-
-        // CATEGORIES
-        const categories = [
-          { id: 'all', label: 'Semua Berkas', icon: 'fa-solid fa-border-all' },
-          { id: 'document', label: 'Dokumen', icon: 'fa-solid fa-file-lines' },
-          { id: 'image', label: 'Gambar', icon: 'fa-solid fa-file-image' },
-          { id: 'code', label: 'Kode & Script', icon: 'fa-solid fa-file-code' },
-          { id: 'archive', label: 'Arsip Data', icon: 'fa-solid fa-file-zipper' }
-        ];
-
-        // FILE STATE KOSONG (Tanpa Data Demo)
-        const files = ref([]);
-
-        // UI & FILTER STATES
-        const selectedDrive = ref('all');
-        const selectedCategory = ref('all');
-        const searchQuery = ref('');
-        const viewMode = ref('grid');
-        const sortBy = ref('name');
-        const activeFile = ref(null);
-        const selectedFileIds = ref([]);
-
-        // MODAL CONTROL STATES
-        const modals = ref({
-          accounts: false,
-          upload: false,
-          share: false,
-          transfer: false,
-          newFolder: false,
-          preview: false
-        });
-
-        // FORM & TEMP STATES
-        const uploadForm = ref({ fileName: '', driveId: 'gdrive', type: 'document' });
-        const isUploading = ref(false);
-        const uploadProgress = ref(0);
-
-        const shareOptions = ref({ hasPassword: false, password: '', expiry: '7d' });
-        const generatedShareUrl = ref('');
-
-        const transferForm = ref({ fileId: null, targetDriveId: 's3' });
-        const isTransferring = ref(false);
-        const transferProgress = ref(0);
-
-        const newFolderName = ref('');
-        const previewingFile = ref(null);
-        const toasts = ref([]);
-
-        // COMPUTED PROPERTIES
-        const connectedDrives = computed(() => drives.value.filter(d => d.connected));
-
-        const totalUsedGB = computed(() => drives.value.reduce((acc, d) => acc + (d.connected ? d.used : 0), 0));
-        const totalMaxGB = computed(() => drives.value.reduce((acc, d) => acc + (d.connected ? d.capacityGB : 0), 0));
-
-        const trashFiles = computed(() => files.value.filter(f => f.inTrash));
-
-        const filteredFiles = computed(() => {
-          return files.value.filter(file => {
-            // Trash status check
-            if (selectedCategory.value === 'trash') {
-              return file.inTrash;
-            }
-            if (file.inTrash) return false;
-
-            // Drive Filter
-            if (selectedDrive.value !== 'all' && file.driveId !== selectedDrive.value) return false;
-
-            // Category Filter
-            if (selectedCategory.value !== 'all' && file.type !== selectedCategory.value) return false;
-
-            // Search Query Filter
-            if (searchQuery.value.trim() !== '') {
-              const query = searchQuery.value.toLowerCase();
-              return file.name.toLowerCase().includes(query) || file.type.toLowerCase().includes(query);
-            }
-
-            return true;
-          }).sort((a, b) => {
-            if (sortBy.value === 'size') return b.sizeMB - a.sizeMB;
-            if (sortBy.value === 'date') return new Date(b.updatedAt) - new Date(a.updatedAt);
-            return a.name.localeCompare(b.name);
-          });
-        });
-
-        // HELPER FUNCTIONS
-        const showToast = (message, icon = 'fa-solid fa-circle-check', color = '#10B981') => {
-          const id = Date.now();
-          toasts.value.push({ id, message, icon, color });
-          setTimeout(() => {
-            toasts.value = toasts.value.filter(t => t.id !== id);
-          }, 3500);
-        };
-
-        const getDriveInfo = (driveId) => {
-          return drives.value.find(d => d.id === driveId) || { name: 'Cloud Storage', icon: 'fa-solid fa-cloud', color: '#6366F1' };
-        };
-
-        const getDriveFileCount = (driveId) => {
-          return files.value.filter(f => f.driveId === driveId && !f.inTrash).length;
-        };
-
-        const formatSize = (mb) => {
-          if (mb >= 1000) return (mb / 1024).toFixed(2) + ' GB';
-          return mb.toFixed(1) + ' MB';
-        };
-
-        const getFileIcon = (type) => {
-          switch (type) {
-            case 'document': return 'fa-solid fa-file-lines';
-            case 'image': return 'fa-solid fa-file-image';
-            case 'code': return 'fa-solid fa-file-code';
-            case 'archive': return 'fa-solid fa-file-zipper';
-            case 'folder': return 'fa-solid fa-folder';
-            default: return 'fa-solid fa-file';
-          }
-        };
-
-        const getFileColor = (type) => {
-          switch (type) {
-            case 'document': return 'text-indigo-400';
-            case 'image': return 'text-emerald-400';
-            case 'code': return 'text-amber-400';
-            case 'archive': return 'text-rose-400';
-            case 'folder': return 'text-cyan-400';
-            default: return 'text-slate-400';
-          }
-        };
-
-        const getActiveFilterLabel = () => {
-          if (selectedCategory.value === 'trash') return 'Sampah System';
-          if (selectedDrive.value === 'all') return 'Semua Layanan Cloud';
-          return getDriveInfo(selectedDrive.value).name;
-        };
-
-        // INTERACTION HANDLERS
-        const selectFile = (file) => {
-          activeFile.value = file;
-        };
-
-        const toggleSelectFile = (fileId) => {
-          if (selectedFileIds.value.includes(fileId)) {
-            selectedFileIds.value = selectedFileIds.value.filter(id => id !== fileId);
-          } else {
-            selectedFileIds.value.push(fileId);
-          }
-        };
-
-        const toggleSelectAll = () => {
-          if (selectedFileIds.value.length === filteredFiles.value.length) {
-            selectedFileIds.value = [];
-          } else {
-            selectedFileIds.value = filteredFiles.value.map(f => f.id);
-          }
-        };
-
-        const resetFilters = () => {
-          selectedDrive.value = 'all';
-          selectedCategory.value = 'all';
-          searchQuery.value = '';
-        };
-
-        const openModal = (name) => {
-          modals.value[name] = true;
-          if (name === 'transfer' && files.value.length > 0) {
-            transferForm.value.fileId = files.value[0].id;
-          }
-        };
-
-        const closeModal = (name) => {
-          modals.value[name] = false;
-        };
-
-        // DRIVE MANAGEMENT
-        const toggleDriveConnection = (drive) => {
-          drive.connected = !drive.connected;
-          const status = drive.connected ? 'terhubung kembali' : 'terputus';
-          showToast(`${drive.name} berhasil ${status}`, drive.connected ? 'fa-solid fa-link' : 'fa-solid fa-link-slash', drive.connected ? '#10B981' : '#F43F5E');
-        };
-
-        // FILE ACTIONS
-        const triggerSimulatedFileSelect = () => {
-          if (!uploadForm.value.fileName) {
-            uploadForm.value.fileName = 'Dokumen_Baru_' + Math.floor(Math.random() * 1000) + '.pdf';
-          }
-          showToast('Berkas terpilih. Klik "Mulai Unggah" untuk memproses', 'fa-solid fa-file-arrow-up', '#3B82F6');
-        };
-
-        const submitUpload = () => {
-          isUploading.value = true;
-          uploadProgress.value = 0;
-
-          const interval = setInterval(() => {
-            uploadProgress.value += 20;
-            if (uploadProgress.value >= 100) {
-              clearInterval(interval);
-              isUploading.value = false;
-
-              const fileSize = Math.floor(Math.random() * 30) + 5;
-
-              // Tambah berkas baru ke sistem
-              const newFile = {
-                id: Date.now(),
-                name: uploadForm.value.fileName,
-                driveId: uploadForm.value.driveId,
-                type: uploadForm.value.type,
-                extension: uploadForm.value.fileName.split('.').pop() || 'file',
-                sizeMB: fileSize,
-                updatedAt: 'Hari ini',
-                inTrash: false
-              };
-
-              // Update kapasitas terpakai pada cloud drive yang dipilih
-              const targetDrive = drives.value.find(d => d.id === uploadForm.value.driveId);
-              if (targetDrive) {
-                targetDrive.used = parseFloat((targetDrive.used + (fileSize / 1024)).toFixed(2));
-              }
-
-              files.value.unshift(newFile);
-              closeModal('upload');
-              uploadForm.value.fileName = '';
-              showToast(`Berkas "${newFile.name}" berhasil diunggah!`, 'fa-solid fa-cloud-arrow-up', '#10B981');
-            }
-          }, 150);
-        };
-
-        const createNewFolder = () => {
-          if (!newFolderName.value.trim()) return;
-          const folderFile = {
-            id: Date.now(),
-            name: newFolderName.value.trim(),
-            driveId: selectedDrive.value === 'all' ? 'gdrive' : selectedDrive.value,
-            type: 'folder',
-            extension: 'folder',
-            sizeMB: 0,
-            updatedAt: 'Hari ini',
-            inTrash: false
-          };
-          files.value.unshift(folderFile);
-          newFolderName.value = '';
-          closeModal('newFolder');
-          showToast(`Folder "${folderFile.name}" telah dibuat`, 'fa-solid fa-folder-plus', '#06B6D4');
-        };
-
-        const previewFile = (file) => {
-          previewingFile.value = file;
-          openModal('preview');
-        };
-
-        const openShareModal = (file) => {
-          activeFile.value = file;
-          generatedShareUrl.value = `https://omnidrive.io/share/v2/${file.id}?key=${Math.random().toString(36).substring(7)}`;
-          openModal('share');
-        };
-
-        const copyShareLink = () => {
-          const tempInput = document.createElement('input');
-          tempInput.value = generatedShareUrl.value;
-          document.body.appendChild(tempInput);
-          tempInput.select();
-          document.execCommand('copy');
-          document.body.removeChild(tempInput);
-          showToast('Tautan berbagi disalin ke clipboard!', 'fa-solid fa-copy', '#6366F1');
-        };
-
-        const downloadFile = (file) => {
-          showToast(`Mengunduh "${file.name}"...`, 'fa-solid fa-circle-down', '#06B6D4');
-        };
-
-        const deleteFile = (file) => {
-          if (file.inTrash) {
-            files.value = files.value.filter(f => f.id !== file.id);
             
-            // Kurangi kapasitas terpakai saat dihapus permanen
-            const targetDrive = drives.value.find(d => d.id === file.driveId);
-            if (targetDrive && targetDrive.used > 0) {
-              targetDrive.used = Math.max(0, parseFloat((targetDrive.used - (file.sizeMB / 1024)).toFixed(2)));
+            <div class="p-6 overflow-y-auto space-y-5 text-xs text-gray-300">
+                <div class="bg-purple-950/40 border border-purple-800/60 rounded-xl p-4 space-y-2">
+                    <h4 class="font-bold text-purple-300 text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-database"></i> Langkah 1: Buat Database Google Sheets Otomatis
+                    </h4>
+                    <p class="text-gray-400">Klik tombol di bawah untuk membuat struktur tabel Google Sheets secara otomatis (`Users`, `LinkedDrives`, `FileIndex`).</p>
+                    <button onclick="copyDatabaseSetupPrompt()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-lg shadow-md">
+                        <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i> Salin Skrip setupDatabase() ke Clipboard
+                    </button>
+                </div>
+
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <h4 class="font-bold text-gray-100 text-sm">Langkah 2: Salin Backend Script (Code.gs)</h4>
+                        <button onclick="copyCodeGsScript()" class="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-cyan-400 rounded-lg border border-gray-700">
+                            <i class="fa-regular fa-copy mr-1"></i> Salin Code.gs
+                        </button>
+                    </div>
+                    <pre class="bg-gray-950 p-4 rounded-xl border border-gray-800 overflow-x-auto text-[11px] font-mono text-cyan-300 max-h-64">
+/* Code.gs - Google Apps Script Server Backend */
+const SPREADSHEET_ID = "REPLACE_WITH_YOUR_GOOGLE_SHEET_ID";
+
+function doGet(e) {
+  return HtmlService.createTemplateFromFile('Index')
+    .evaluate()
+    .setTitle('DriveFusion Multi-Cloud Storage')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1.0');
+}
+
+function setupDatabase() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  
+  // Sheet Users
+  let userSheet = ss.getSheetByName('Users') || ss.insertSheet('Users');
+  if(userSheet.getLastRow() === 0) {
+    userSheet.appendRow(['UserID', 'Username', 'Email', 'Role', 'CreatedAt']);
+  }
+  
+  // Sheet LinkedDrives
+  let driveSheet = ss.getSheetByName('LinkedDrives') || ss.insertSheet('LinkedDrives');
+  if(driveSheet.getLastRow() === 0) {
+    driveSheet.appendRow(['DriveID', 'AccountEmail', 'AccountName', 'TotalQuotaGB', 'UsedQuotaGB', 'Status']);
+  }
+  
+  // Sheet FileIndex
+  let fileSheet = ss.getSheetByName('FileIndex') || ss.insertSheet('FileIndex');
+  if(fileSheet.getLastRow() === 0) {
+    fileSheet.appendRow(['FileID', 'FileName', 'FileType', 'FileSizeMB', 'DriveID', 'ParentFolderID', 'CreatedAt', 'IsTrash']);
+  }
+  
+  return "Database Setup Complete!";
+}
+
+// Smart Storage Allocation Engine
+function getBestDriveForUpload(fileSizeBytes) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName('LinkedDrives');
+  const data = sheet.getDataRange().getValues();
+  
+  let bestDrive = null;
+  let maxFreeSpace = -1;
+  
+  for (let i = 1; i < data.length; i++) {
+    const driveId = data[i][0];
+    const totalGB = parseFloat(data[i][3]);
+    const usedGB = parseFloat(data[i][4]);
+    const freeGB = totalGB - usedGB;
+    
+    if (freeGB > maxFreeSpace) {
+      maxFreeSpace = freeGB;
+      bestDrive = driveId;
+    }
+  }
+  return bestDrive;
+}
+                    </pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // GLOBAL APPLICATION STATE
+        let appState = {
+            activeTab: 'explorer',
+            currentFolderId: 'root',
+            viewMode: 'grid', // 'grid', 'thumbnails', 'details'
+            searchQuery: '',
+            selectedItemId: null,
+            contextTargetId: null,
+            clipboard: {
+                action: null, // 'cut' or 'copy'
+                item: null
+            },
+            drives: [
+                { id: 'drive_1', name: 'Google Drive 1 (Work)', email: 'work.drive@gmail.com', totalGB: 15.0, usedGB: 8.4, status: 'Active' },
+                { id: 'drive_2', name: 'Google Drive 2 (Archive)', email: 'archive.cloud@gmail.com', totalGB: 100.0, usedGB: 15.2, status: 'Active' },
+                { id: 'drive_3', name: 'Google Drive 3 (Vault)', email: 'team.vault@gmail.com', totalGB: 15.0, usedGB: 4.8, status: 'Active' }
+            ],
+            folders: [
+                { id: 'root', name: 'Root Directory', parentId: null },
+                { id: 'f_docs', name: 'Dokumen & Pekerjaan', parentId: 'root' },
+                { id: 'f_media', name: 'Foto & Video Presentasi', parentId: 'root' },
+                { id: 'f_projects', name: 'Proyek Software 2026', parentId: 'f_docs' }
+            ],
+            files: [
+                { id: 'file_1', name: 'Laporan_Keuangan_Q3.pdf', type: 'pdf', size: '3.8 MB', folderId: 'f_docs', driveId: 'drive_1', date: '01 Oct 2026', isTrash: false, url: 'https://www.w3.org/W3C/Design/svg-card.pdf' },
+                { id: 'file_2', name: 'Desain_Arsitektur_UI.png', type: 'image', size: '8.4 MB', folderId: 'f_media', driveId: 'drive_2', date: '29 Sep 2026', isTrash: false, url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800' },
+                { id: 'file_3', name: 'Demo_Aplikasi_DriveFusion.mp4', type: 'video', size: '142.0 MB', folderId: 'f_media', driveId: 'drive_2', date: '28 Sep 2026', isTrash: false, url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4' },
+                { id: 'file_4', name: 'Database_Backup_Full.sql', type: 'code', size: '24.5 MB', folderId: 'f_docs', driveId: 'drive_3', date: '25 Sep 2026', isTrash: false, url: '' },
+                { id: 'file_5', name: 'Audio_Meeting_Catatan.mp3', type: 'audio', size: '12.1 MB', folderId: 'root', driveId: 'drive_1', date: '30 Sep 2026', isTrash: false, url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' }
+            ]
+        };
+
+        function switchTab(tabId) {
+            appState.activeTab = tabId;
+            document.querySelectorAll('section[id^="tab-"]').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-cyan-400', 'bg-cyan-500/10');
+                btn.classList.add('text-gray-400');
+            });
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if (activeNav) {
+                activeNav.classList.remove('text-gray-400');
+                activeNav.classList.add('text-cyan-400', 'bg-cyan-500/10');
             }
 
-            showToast(`"${file.name}" dihapus permanen`, 'fa-solid fa-trash-can', '#F43F5E');
-          } else {
-            file.inTrash = true;
-            showToast(`"${file.name}" dipindahkan ke Sampah`, 'fa-solid fa-trash', '#F59E0B');
-          }
-          if (activeFile.value?.id === file.id) activeFile.value = null;
-        };
+            if (tabId === 'explorer') renderExplorer();
+            if (tabId === 'drives') renderDrivesManagement();
+            if (tabId === 'recent') renderRecentFiles();
+            if (tabId === 'trash') renderTrashFiles();
+        }
 
-        const batchDelete = () => {
-          files.value.forEach(f => {
-            if (selectedFileIds.value.includes(f.id)) {
-              f.inTrash = true;
+        function setViewMode(mode) {
+            appState.viewMode = mode;
+            ['thumbnails', 'grid', 'details'].forEach(m => {
+                const btn = document.getElementById(`view-${m}`);
+                if (m === mode) {
+                    btn.className = 'p-1.5 text-cyan-400 bg-gray-800 rounded shadow';
+                } else {
+                    btn.className = 'p-1.5 text-gray-400 rounded hover:text-white';
+                }
+            });
+            renderExplorer();
+        }
+
+        function renderBreadcrumbs() {
+            const container = document.getElementById('explorer-breadcrumbs');
+            let path = [];
+            let currFolder = appState.folders.find(f => f.id === appState.currentFolderId);
+
+            while (currFolder) {
+                path.unshift(currFolder);
+                currFolder = appState.folders.find(f => f.id === currFolder.parentId);
             }
-          });
-          showToast(`${selectedFileIds.value.length} berkas dipindahkan ke sampah`, 'fa-solid fa-trash', '#F59E0B');
-          selectedFileIds.value = [];
-        };
 
-        const batchDownload = () => {
-          showToast(`Menyiapkan unduhan paket (${selectedFileIds.value.length} berkas)...`, 'fa-solid fa-file-zipper', '#6366F1');
-          selectedFileIds.value = [];
-        };
+            container.innerHTML = path.map((f, idx) => {
+                const isLast = idx === path.length - 1;
+                return `
+                    <button onclick="navigateToFolder('${f.id}')" class="flex items-center gap-1 hover:text-cyan-400 transition-colors ${isLast ? 'font-semibold text-gray-100' : 'text-gray-400'}">
+                        ${idx === 0 ? '<i class="fa-solid fa-house text-xs"></i>' : ''}
+                        <span>${f.name}</span>
+                    </button>
+                    ${!isLast ? '<i class="fa-solid fa-chevron-right text-[10px] text-gray-600"></i>' : ''}
+                `;
+            }).join('');
+        }
 
-        const startTransfer = () => {
-          isTransferring.value = true;
-          transferProgress.value = 0;
+        function renderFolderTree() {
+            const container = document.getElementById('sidebar-folder-tree');
+            const rootFolders = appState.folders.filter(f => f.parentId === 'root');
 
-          const interval = setInterval(() => {
-            transferProgress.value += 25;
-            if (transferProgress.value >= 100) {
-              clearInterval(interval);
-              isTransferring.value = false;
+            container.innerHTML = `
+                <button onclick="navigateToFolder('root')" class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-gray-300 hover:bg-gray-800/80 ${appState.currentFolderId === 'root' ? 'bg-gray-800 text-cyan-400 font-semibold' : ''}">
+                    <i class="fa-solid fa-folder text-amber-400"></i>
+                    <span class="truncate">Root Directory</span>
+                </button>
+            ` + rootFolders.map(f => `
+                <button onclick="navigateToFolder('${f.id}')" class="w-full flex items-center gap-2 pl-6 pr-2 py-1.5 rounded-lg text-gray-400 hover:bg-gray-800/80 ${appState.currentFolderId === f.id ? 'bg-gray-800 text-cyan-400 font-semibold' : ''}">
+                    <i class="fa-regular fa-folder text-amber-400"></i>
+                    <span class="truncate">${f.name}</span>
+                </button>
+            `).join('');
+        }
 
-              const targetFile = files.value.find(f => f.id === transferForm.value.fileId);
-              if (targetFile) {
-                targetFile.driveId = transferForm.value.targetDriveId;
-                showToast(`"${targetFile.name}" berhasil dipindahkan ke ${getDriveInfo(targetFile.driveId).name}`, 'fa-solid fa-right-left', '#06B6D4');
-              }
-              closeModal('transfer');
+        function navigateToFolder(folderId) {
+            appState.currentFolderId = folderId;
+            renderExplorer();
+            renderFolderTree();
+        }
+
+        function renderExplorer() {
+            renderBreadcrumbs();
+            renderDriveStorageBars();
+
+            const viewport = document.getElementById('explorer-viewport');
+            const fileCountEl = document.getElementById('explorer-file-count');
+
+            // Get subfolders & files for current folder
+            let currentSubfolders = appState.folders.filter(f => f.parentId === appState.currentFolderId);
+            let currentFiles = appState.files.filter(f => f.folderId === appState.currentFolderId && !f.isTrash);
+
+            if (appState.searchQuery) {
+                const q = appState.searchQuery.toLowerCase();
+                currentFiles = appState.files.filter(f => f.name.toLowerCase().includes(q) && !f.isTrash);
+                currentSubfolders = appState.folders.filter(f => f.name.toLowerCase().includes(q) && f.id !== 'root');
             }
-          }, 200);
-        };
 
-        return {
-          drives,
-          categories,
-          files,
-          selectedDrive,
-          selectedCategory,
-          searchQuery,
-          viewMode,
-          sortBy,
-          activeFile,
-          selectedFileIds,
-          modals,
-          uploadForm,
-          isUploading,
-          uploadProgress,
-          shareOptions,
-          generatedShareUrl,
-          transferForm,
-          isTransferring,
-          transferProgress,
-          newFolderName,
-          previewingFile,
-          toasts,
-          connectedDrives,
-          totalUsedGB,
-          totalMaxGB,
-          trashFiles,
-          filteredFiles,
-          getDriveInfo,
-          getDriveFileCount,
-          formatSize,
-          getFileIcon,
-          getFileColor,
-          getActiveFilterLabel,
-          selectFile,
-          toggleSelectFile,
-          toggleSelectAll,
-          resetFilters,
-          openModal,
-          closeModal,
-          toggleDriveConnection,
-          triggerSimulatedFileSelect,
-          submitUpload,
-          createNewFolder,
-          previewFile,
-          openShareModal,
-          copyShareLink,
-          downloadFile,
-          deleteFile,
-          batchDelete,
-          batchDownload,
-          startTransfer
+            fileCountEl.textContent = `${currentSubfolders.length + currentFiles.length} item`;
+
+            if (currentSubfolders.length === 0 && currentFiles.length === 0) {
+                viewport.innerHTML = `
+                    <div class="h-64 flex flex-col items-center justify-center text-center">
+                        <i class="fa-regular fa-folder-open text-4xl text-gray-600 mb-2"></i>
+                        <p class="text-xs font-medium text-gray-400">Folder Ini Kosong</p>
+                        <p class="text-[11px] text-gray-500 mt-1">Gunakan tombol 'Unggah File' atau 'Folder Baru' di toolbar.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // GRID VIEW
+            if (appState.viewMode === 'grid' || appState.viewMode === 'thumbnails') {
+                const isThumb = appState.viewMode === 'thumbnails';
+                viewport.innerHTML = `
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                        ${currentSubfolders.map(f => `
+                            <div onclick="navigateToFolder('${f.id}')" oncontextmenu="handleFolderContextMenu(event, '${f.id}')" class="glass-panel glass-panel-hover p-3 rounded-xl cursor-pointer flex flex-col items-center text-center group">
+                                <i class="fa-solid fa-folder text-amber-400 text-3xl mb-1.5 group-hover:scale-110 transition-transform"></i>
+                                <span class="font-medium text-xs text-gray-200 truncate w-full">${f.name}</span>
+                                <span class="text-[10px] text-gray-500">Folder</span>
+                            </div>
+                        `).join('')}
+
+                        ${currentFiles.map(file => {
+                            const drive = appState.drives.find(d => d.id === file.driveId);
+                            const iconObj = getFileIcon(file.type);
+                            return `
+                                <div onclick="selectItem('${file.id}')" ondblclick="previewFile('${file.id}')" oncontextmenu="handleFileContextMenu(event, '${file.id}')" class="glass-panel glass-panel-hover p-3 rounded-xl cursor-pointer flex flex-col justify-between group ${appState.selectedItemId === file.id ? 'border-cyan-500 bg-cyan-500/10' : ''}">
+                                    ${isThumb && file.type === 'image' ? `
+                                        <div class="w-full h-24 rounded-lg overflow-hidden mb-2 bg-gray-950">
+                                            <img src="${file.url}" class="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                        </div>
+                                    ` : `
+                                        <div class="w-full h-20 rounded-lg flex items-center justify-center bg-gray-950/40 mb-2">
+                                            <i class="${iconObj.icon} ${iconObj.color} text-3xl group-hover:scale-110 transition-transform"></i>
+                                        </div>
+                                    `}
+                                    <div>
+                                        <h4 class="font-semibold text-xs text-gray-200 truncate group-hover:text-cyan-400 transition-colors">${file.name}</h4>
+                                        <div class="flex items-center justify-between text-[10px] text-gray-400 mt-1">
+                                            <span>${file.size}</span>
+                                            <span class="px-1.5 py-0.5 rounded bg-gray-800 text-[9px] text-gray-300 truncate max-w-[80px]">${drive ? drive.name.split(' ')[2] || 'Drive' : 'Drive'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            } else {
+                // DETAILS LIST VIEW
+                viewport.innerHTML = `
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="border-b border-gray-800 text-gray-400 font-semibold">
+                                    <th class="pb-2.5 pl-2">Nama</th>
+                                    <th class="pb-2.5">Akun Drive</th>
+                                    <th class="pb-2.5">Ukuran</th>
+                                    <th class="pb-2.5">Tanggal Modifikasi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800/60 text-gray-300">
+                                ${currentSubfolders.map(f => `
+                                    <tr onclick="navigateToFolder('${f.id}')" oncontextmenu="handleFolderContextMenu(event, '${f.id}')" class="hover:bg-gray-800/50 cursor-pointer">
+                                        <td class="py-2.5 pl-2 flex items-center gap-2.5 font-medium text-amber-400">
+                                            <i class="fa-solid fa-folder text-base"></i>
+                                            <span>${f.name}</span>
+                                        </td>
+                                        <td class="py-2.5 text-gray-500">-</td>
+                                        <td class="py-2.5 text-gray-500">Folder</td>
+                                        <td class="py-2.5 text-gray-500">-</td>
+                                    </tr>
+                                `).join('')}
+
+                                ${currentFiles.map(file => {
+                                    const drive = appState.drives.find(d => d.id === file.driveId);
+                                    const iconObj = getFileIcon(file.type);
+                                    return `
+                                        <tr onclick="selectItem('${file.id}')" ondblclick="previewFile('${file.id}')" oncontextmenu="handleFileContextMenu(event, '${file.id}')" class="hover:bg-gray-800/50 cursor-pointer ${appState.selectedItemId === file.id ? 'bg-cyan-500/10' : ''}">
+                                            <td class="py-2.5 pl-2 flex items-center gap-2.5 font-medium text-gray-200">
+                                                <i class="${iconObj.icon} ${iconObj.color} text-base"></i>
+                                                <span>${file.name}</span>
+                                            </td>
+                                            <td class="py-2.5 text-gray-400">
+                                                <span class="px-2 py-0.5 rounded bg-gray-800 text-[10px] text-gray-300">${drive ? drive.name : 'Unknown Drive'}</span>
+                                            </td>
+                                            <td class="py-2.5 text-gray-400">${file.size}</td>
+                                            <td class="py-2.5 text-gray-400">${file.date}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+        }
+
+        function getFileIcon(type) {
+            switch(type) {
+                case 'pdf': return { icon: 'fa-solid fa-file-pdf', color: 'text-red-400' };
+                case 'image': return { icon: 'fa-solid fa-file-image', color: 'text-emerald-400' };
+                case 'video': return { icon: 'fa-solid fa-file-video', color: 'text-blue-400' };
+                case 'audio': return { icon: 'fa-solid fa-file-audio', color: 'text-purple-400' };
+                case 'code': return { icon: 'fa-solid fa-file-code', color: 'text-cyan-400' };
+                default: return { icon: 'fa-solid fa-file', color: 'text-gray-400' };
+            }
+        }
+
+        function renderDriveStorageBars() {
+            const container = document.getElementById('sidebar-drive-list');
+            const totalCapacity = appState.drives.reduce((acc, d) => acc + d.totalGB, 0);
+            const totalUsed = appState.drives.reduce((acc, d) => acc + d.usedGB, 0);
+
+            document.getElementById('header-storage-summary').textContent = `${totalUsed.toFixed(1)} GB / ${totalCapacity.toFixed(1)} GB Terpakai`;
+
+            container.innerHTML = appState.drives.map(drive => {
+                const pct = ((drive.usedGB / drive.totalGB) * 100).toFixed(0);
+                return `
+                    <div class="p-2 bg-gray-950/50 rounded-xl border border-gray-800 text-xs">
+                        <div class="flex justify-between items-center text-[11px] mb-1">
+                            <span class="font-medium text-gray-300 truncate max-w-[120px]">${drive.name.split(' ')[0]} ${drive.name.split(' ')[1]}</span>
+                            <span class="text-gray-400">${drive.usedGB} / ${drive.totalGB} GB</span>
+                        </div>
+                        <div class="w-full bg-gray-800 rounded-full h-1.5 overflow-hidden">
+                            <div class="bg-gradient-to-r from-cyan-500 to-blue-500 h-full rounded-full" style="width: ${pct}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function triggerQuickUpload() {
+            // Find drive with maximum free space
+            let bestDrive = appState.drives[0];
+            let maxFree = bestDrive.totalGB - bestDrive.usedGB;
+
+            appState.drives.forEach(d => {
+                const free = d.totalGB - d.usedGB;
+                if (free > maxFree) {
+                    maxFree = free;
+                    bestDrive = d;
+                }
+            });
+
+            Swal.fire({
+                title: 'Smart Upload File',
+                html: `
+                    <div class="text-left text-xs space-y-3">
+                        <p class="text-gray-300">Sistem otomatis mendeteksi Google Drive terluas:</p>
+                        <div class="p-3 bg-cyan-950/60 border border-cyan-800 rounded-xl">
+                            <p class="font-bold text-cyan-300">${bestDrive.name}</p>
+                            <p class="text-gray-400 text-[11px]">Sisa Ruang: ${maxFree.toFixed(1)} GB Longgar</p>
+                        </div>
+                        <input type="text" id="swal-filename" placeholder="Nama Berkas (contoh: Projek_2026.pdf)" class="w-full p-2.5 bg-gray-900 border border-gray-700 rounded-xl text-gray-200 text-xs" />
+                        <select id="swal-filetype" class="w-full p-2.5 bg-gray-900 border border-gray-700 rounded-xl text-gray-200 text-xs">
+                            <option value="pdf">Dokumen PDF</option>
+                            <option value="image">Gambar / Foto</option>
+                            <option value="video">Video MP4</option>
+                            <option value="code">Kode Program / SQL</option>
+                        </select>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Unggah Sekarang',
+                confirmButtonColor: '#00f2fe',
+                cancelButtonText: 'Batal',
+                background: '#1a1d29',
+                color: '#f3f4f6'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const name = document.getElementById('swal-filename').value.trim() || 'File_Baru.pdf';
+                    const type = document.getElementById('swal-filetype').value;
+
+                    const newFile = {
+                        id: 'file_' + Date.now(),
+                        name: name,
+                        type: type,
+                        size: (Math.random() * 15 + 1).toFixed(1) + ' MB',
+                        folderId: appState.currentFolderId,
+                        driveId: bestDrive.id,
+                        date: 'Hari ini',
+                        isTrash: false,
+                        url: type === 'image' ? 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800' : ''
+                    };
+
+                    appState.files.unshift(newFile);
+                    bestDrive.usedGB = Number((bestDrive.usedGB + 0.05).toFixed(1));
+
+                    renderExplorer();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil Diunggah!',
+                        text: `File disimpan ke ${bestDrive.name}`,
+                        background: '#1a1d29',
+                        color: '#f3f4f6'
+                    });
+                }
+            });
+        }
+
+        function createNewFolderModal() {
+            Swal.fire({
+                title: 'Buat Folder Baru',
+                input: 'text',
+                inputPlaceholder: 'Nama folder...',
+                showCancelButton: true,
+                confirmButtonText: 'Buat',
+                confirmButtonColor: '#3b82f6',
+                background: '#1a1d29',
+                color: '#f3f4f6'
+            }).then((res) => {
+                if (res.isConfirmed && res.value) {
+                    appState.folders.push({
+                        id: 'f_' + Date.now(),
+                        name: res.value,
+                        parentId: appState.currentFolderId
+                    });
+                    renderExplorer();
+                    renderFolderTree();
+                }
+            });
+        }
+
+        function selectItem(itemId) {
+            appState.selectedItemId = itemId;
+            renderExplorer();
+        }
+
+        function handleFileContextMenu(e, fileId) {
+            e.preventDefault();
+            e.stopPropagation();
+            appState.contextTargetId = fileId;
+            showContextMenu(e.clientX, e.clientY);
+        }
+
+        function handleFolderContextMenu(e, folderId) {
+            e.preventDefault();
+            e.stopPropagation();
+            appState.contextTargetId = folderId;
+            showContextMenu(e.clientX, e.clientY);
+        }
+
+        function handleBlankContextMenu(e) {
+            e.preventDefault();
+            hideContextMenu();
+        }
+
+        function showContextMenu(x, y) {
+            const menu = document.getElementById('context-menu');
+            menu.style.left = `${x}px`;
+            menu.style.top = `${y}px`;
+            menu.style.display = 'block';
+        }
+
+        function hideContextMenu() {
+            document.getElementById('context-menu').style.display = 'none';
+        }
+
+        document.addEventListener('click', hideContextMenu);
+
+        function ctxPreview() {
+            if (appState.contextTargetId) previewFile(appState.contextTargetId);
+        }
+
+        function ctxCut() {
+            const item = appState.files.find(f => f.id === appState.contextTargetId);
+            if (item) {
+                appState.clipboard = { action: 'cut', item: item };
+                updateClipboardBanner();
+            }
+        }
+
+        function ctxCopy() {
+            const item = appState.files.find(f => f.id === appState.contextTargetId);
+            if (item) {
+                appState.clipboard = { action: 'copy', item: item };
+                updateClipboardBanner();
+            }
+        }
+
+        function updateClipboardBanner() {
+            const banner = document.getElementById('clipboard-banner');
+            const text = document.getElementById('clipboard-banner-text');
+            if (appState.clipboard.item) {
+                banner.classList.remove('hidden');
+                text.textContent = `1 item (${appState.clipboard.item.name}) siap di-${appState.clipboard.action === 'cut' ? 'potong' : 'salin'}`;
+            } else {
+                banner.classList.add('hidden');
+            }
+        }
+
+        function clearClipboard() {
+            appState.clipboard = { action: null, item: null };
+            updateClipboardBanner();
+        }
+
+        function triggerPaste() {
+            if (!appState.clipboard.item) return;
+
+            if (appState.clipboard.action === 'cut') {
+                appState.clipboard.item.folderId = appState.currentFolderId;
+            } else if (appState.clipboard.action === 'copy') {
+                const copyItem = { ...appState.clipboard.item, id: 'file_' + Date.now(), name: 'Copy_' + appState.clipboard.item.name, folderId: appState.currentFolderId };
+                appState.files.push(copyItem);
+            }
+
+            clearClipboard();
+            renderExplorer();
+            Swal.fire({ icon: 'success', title: 'File Berhasil Ditempel!', background: '#1a1d29', color: '#f3f4f6', timer: 1500, showConfirmButton: false });
+        }
+
+        function ctxDelete() {
+            const file = appState.files.find(f => f.id === appState.contextTargetId);
+            if (file) {
+                file.isTrash = true;
+                renderExplorer();
+                Swal.fire({ icon: 'info', title: 'Dipindahkan ke Tempat Sampah', background: '#1a1d29', color: '#f3f4f6', timer: 1500, showConfirmButton: false });
+            }
+        }
+
+        function ctxRename() {
+            const file = appState.files.find(f => f.id === appState.contextTargetId);
+            if (file) {
+                Swal.fire({
+                    title: 'Ubah Nama File',
+                    input: 'text',
+                    inputValue: file.name,
+                    showCancelButton: true,
+                    confirmButtonText: 'Simpan',
+                    background: '#1a1d29',
+                    color: '#f3f4f6'
+                }).then(res => {
+                    if (res.isConfirmed && res.value) {
+                        file.name = res.value;
+                        renderExplorer();
+                    }
+                });
+            }
+        }
+
+        function previewFile(fileId) {
+            const file = appState.files.find(f => f.id === fileId);
+            if (!file) return;
+
+            const modal = document.getElementById('preview-modal');
+            const title = document.getElementById('preview-title');
+            const sub = document.getElementById('preview-subtitle');
+            const body = document.getElementById('preview-body');
+            const icon = document.getElementById('preview-icon');
+
+            const iconObj = getFileIcon(file.type);
+            icon.className = `${iconObj.icon} ${iconObj.color}`;
+            title.textContent = file.name;
+            sub.textContent = `${file.size} • Ukuran File`;
+
+            if (file.type === 'image') {
+                body.innerHTML = `<img src="${file.url}" class="max-h-[60vh] max-w-full rounded-xl object-contain shadow-2xl" />`;
+            } else if (file.type === 'video') {
+                body.innerHTML = `<video controls src="${file.url}" class="w-full max-h-[60vh] rounded-xl shadow-2xl"></video>`;
+            } else if (file.type === 'audio') {
+                body.innerHTML = `
+                    <div class="text-center space-y-4">
+                        <i class="fa-solid fa-music text-6xl text-purple-400 animate-bounce"></i>
+                        <audio controls src="${file.url}" class="w-72 sm:w-96"></audio>
+                    </div>
+                `;
+            } else {
+                body.innerHTML = `
+                    <div class="text-center p-8 bg-gray-900 border border-gray-800 rounded-2xl max-w-md">
+                        <i class="fa-solid fa-file-contract text-5xl text-cyan-400 mb-3"></i>
+                        <h4 class="font-bold text-gray-200 text-sm mb-1">${file.name}</h4>
+                        <p class="text-xs text-gray-400 mb-4">Pratinjau dokumen interaktif disimulasikan dari Google Drive API.</p>
+                        <button onclick="Swal.fire('Mendownload...', '', 'success')" class="px-4 py-2 bg-cyan-500 text-slate-950 font-bold rounded-xl text-xs">Unduh Berkas</button>
+                    </div>
+                `;
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closePreviewModal() {
+            document.getElementById('preview-modal').classList.add('hidden');
+        }
+
+        function openGASModal() {
+            document.getElementById('gas-setup-modal').classList.remove('hidden');
+        }
+
+        function closeGASModal() {
+            document.getElementById('gas-setup-modal').classList.add('hidden');
+        }
+
+        function copyDatabaseSetupPrompt() {
+            const code = `function setupDatabase() {\n  const ss = SpreadsheetApp.getActiveSpreadsheet();\n  ['Users', 'LinkedDrives', 'FileIndex'].forEach(s => ss.getSheetByName(s) || ss.insertSheet(s));\n  Logger.log('Database initialized successfully!');\n}`;
+            navigator.clipboard.writeText(code);
+            Swal.fire({ icon: 'success', title: 'Skrip setupDatabase() Disalin!', text: 'Tempelkan di editor Google Apps Script Anda.', background: '#1a1d29', color: '#f3f4f6' });
+        }
+
+        function copyCodeGsScript() {
+            Swal.fire({ icon: 'success', title: 'Code.gs Disalin!', background: '#1a1d29', color: '#f3f4f6' });
+        }
+
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('main-sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        }
+
+        function handleSearch(val) {
+            appState.searchQuery = val.trim();
+            renderExplorer();
+        }
+
+        window.onload = function() {
+            renderExplorer();
+            renderFolderTree();
         };
-      }
-    }).mount('#app');
-  </script>
+    </script>
 </body>
 </html>
